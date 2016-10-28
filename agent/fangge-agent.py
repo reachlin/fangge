@@ -11,12 +11,12 @@ DELAY = 7
 PLAYLIST = "test.m3u"
 
 def register_music():
-    onlyfiles = [f for f in listdir("Music") if isfile(join(mypath, f))]
+    onlyfiles = [f for f in listdir("Music") if isfile(join("Music", f))]
     print("%s" % onlyfiles)
     url = 'http://ddoer.mybluemix.net/music'
     values = {
             'jukebox' : 'JB000',
-            'songs' : ';'.join(onlyfiles)
+            'songs' : '\n'.join(onlyfiles)
             }
     data = urllib.urlencode(values)
     req = urllib2.Request(url, data)
