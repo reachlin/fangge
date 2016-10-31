@@ -1,5 +1,8 @@
 #!/usr/bin/python
 
+# add the next line to /etc/rc.local
+# cd /home/pi/;./fangge-agent.py
+
 import time
 import subprocess
 import urllib
@@ -11,7 +14,7 @@ DELAY = 7
 PLAYLIST = "test.m3u"
 
 def register_music():
-    onlyfiles = [f for f in listdir("Music") if isfile(join("Music", f))]
+    onlyfiles = ["%d %s" % (i+1, f) for i, f in enumerate(listdir("Music")) if isfile(join("Music", f))]
     print("%s" % onlyfiles)
     url = 'http://ddoer.mybluemix.net/music'
     values = {
@@ -31,13 +34,16 @@ def job():
     song = urllib2.urlopen("http://ddoer.mybluemix.net/music?key=JB000").read()
     if song:
         print("..."+song)
-        song = "Music/"+song
-        play_cmd = ["omxplayer", "-o", "local", song];
-        subprocess.call(play_cmd)
+        if song == "#STOP":
+            print("stop")
+        else:
+            song = "Music/"+song
+            play_cmd = ["omxplayer", "-o", "alsa", song];
+            subprocess.call(play_cmd)
     else:
         print("no song found.")
 
-
+time.sleep(7)    # without this rc.local will fail!
 register_music()
 while True:
     job()
