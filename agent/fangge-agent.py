@@ -17,12 +17,12 @@ JB_ID = "JB000"
 DELAY = 7
 PLAYLIST = "test.m3u"
 song_list = []
-play_cmd = "omxplayer -o alsa %s"
+play_cmd = "omxplayer -o alsa \"%s\""
 
 def init():
     global play_cmd
     if isfile("/Applications/VLC.app/Contents/MacOS/VLC"):
-        play_cmd = "/Applications/VLC.app/Contents/MacOS/VLC --play-and-exit -I dummy %s"
+        play_cmd = "/Applications/VLC.app/Contents/MacOS/VLC --play-and-exit -I dummy \"%s\""
 
 def get_jb_info():
     ip = ""
@@ -66,7 +66,7 @@ def job():
                     song = song_list[int(song)-1]
                 song = "Music/"+song
                 play_song = play_cmd % song
-                subprocess.call(play_song.split(" "))
+                subprocess.call(play_song, shell=True)
             except:
                 print("play error: %s" % play_song)
     else:
