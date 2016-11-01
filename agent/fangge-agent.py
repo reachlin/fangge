@@ -10,15 +10,25 @@ import urllib2
 from os import listdir
 from os.path import isfile, join
 
+JB_ID = "JB000"
 DELAY = 7
 PLAYLIST = "test.m3u"
+
+def get_jb_info():
+    ip = ""
+    try:
+        ip = subprocess.check_output(["hostname", "-I"])
+    except:
+        ip = "error"
+    return ip
 
 def register_music():
     onlyfiles = ["%d %s" % (i+1, f) for i, f in enumerate(listdir("Music")) if isfile(join("Music", f))]
     print("%s" % onlyfiles)
     url = 'http://ddoer.mybluemix.net/music'
     values = {
-            'jukebox' : 'JB000',
+            'jukebox' : JB_ID,
+            'info': get_jb_info(),
             'songs' : '\n'.join(onlyfiles)
             }
     data = urllib.urlencode(values)
@@ -31,7 +41,7 @@ def job():
     print("%s play music..." % time.strftime("%Y/%m/%d-%H:%M:%S"))
     # Mac OS
     #play_cmd = ["/Applications/VLC.app/Contents/MacOS/VLC", "--play-and-exit", "-I", "dummy", PLAYLIST]
-    song = urllib2.urlopen("http://ddoer.mybluemix.net/music?key=JB000").read()
+    song = urllib2.urlopen("http://ddoer.mybluemix.net/music?key=%s" % JB_ID).read()
     if song:
         print("..."+song)
         if song == "#STOP":
