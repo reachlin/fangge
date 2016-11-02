@@ -8,7 +8,6 @@ var utils = require('./utils');
 var app = express();
 
 app.use(express.query());
-app.use(express.bodyParser({uploadDir:'./uploads'}));
 app.use(express.static(path.join(__dirname, 'public')));
 
 
