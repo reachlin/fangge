@@ -8,6 +8,7 @@
     "dependencies": {
         "request": "*",
         "body-parser": "*",
-        "express": "4.13.x"
+        "express": "4.13.x",
+        "wechat": "2.0.x"
     }
 }
