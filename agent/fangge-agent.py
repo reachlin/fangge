@@ -14,7 +14,7 @@ from os.path import isfile, join
 
 
 JB_ID = "JB000"
-DELAY = 7
+DELAY = 70
 PLAYLIST = "test.m3u"
 song_list = []
 play_cmd = "omxplayer -o alsa \"%s\""
