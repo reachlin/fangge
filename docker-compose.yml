@@ -7,8 +7,8 @@ services:
     volumes:
      - ./server:/var/app
     depends_on:
-     - mango
-  mango:
-    image: mango
+     - mongo
+  mongo:
+    image: mongo
     volumes:
      - ./data:/data/db
