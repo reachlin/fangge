@@ -9,8 +9,6 @@ const bodyParser = require('body-parser');
 const config = require('./config');
 const utils = require('./utils');
 
-var db_memory_music = {};
-var db_memory_play = {};
 var app = express();
 
 app.set('view engine', 'jade');
@@ -32,7 +30,7 @@ dbclient.on('connect', function() {
 app.post("/musiclist", function(req, res) {
   if (req.body) {
     console.log(`---save ${req.body}`);
-    dbclient.hset(req.body.jukebox, "play", req.body.info, function(err, msg) {
+    dbclient.hset(req.body.jukebox, "play", "#STOP", function(err, msg) {
       console.log(`--play ${err}, ${msg}`);
     });
     dbclient.hset(req.body.jukebox, "jukebox", req.body.info, function(err, msg) {
@@ -53,11 +51,11 @@ app.post("/musiclist", function(req, res) {
 app.get("/musiclist", function(req, res) {
   if (req.query && req.query.key) {
     console.log(`---get music for ${req.query.key}`);
-    dbclient.hget(req.query.key, "cmd", function(err, msg) {
+    dbclient.hget(req.query.key, "music", function(err, msg) {
       if (err) {
         res.render('wechat_msg', {"title":"ERROR", "msg":`${err}`});
       } else {
-        res.render('wechat_list', {"title":"Song List", "items":msg});
+        res.render('wechat_list', {"title":"Song List", "items":msg.split('\n')});
       }
     });
   } else {
