@@ -23,7 +23,7 @@ app.use(bodyParser.urlencoded({
 app.post("/musiclist", function(req, res) {
   if (req.body) {
       console.log(`---save ${req.body}`);
-      db_memory_music[req.body.jukebox] = req.body.info;
+      db_memory_music[req.body.jukebox] = req.body.songs;
       res.send("0");
   } else {
     res.send("-2");
