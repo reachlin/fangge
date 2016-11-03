@@ -35,7 +35,7 @@ def get_jb_info():
 
 def register_music():
     global song_list
-    song_list = listdir("Music")
+    song_list = sorted(listdir("Music"))
     onlyfiles = ["%d %s" % (i+1, f) for i, f in enumerate(song_list) if isfile(join("Music", f))]
     print("%s" % onlyfiles)
     url = URL_PREFIX + 'musiclist'

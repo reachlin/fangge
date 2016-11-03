@@ -27,6 +27,20 @@ dbclient.on('connect', function() {
   console.log('redis connected');
 });
 
+app.get("/playsong", function(req, res) {
+    if (req.query && req.query.jukebox && req.query.song) {
+        dbclient.hset(req.query.jukebox, "play", req.query.song, function(err, msg) {
+          if (err) {
+            res.render('wechat_msg', {"title":"INFO", "msg":"点歌失败"});
+          } else {
+            res.render('wechat_msg', {"title":"INFO", "msg":"点歌成功，将在当前歌曲结束后播放。"});
+          }
+        });
+    } else {
+        res.render('wechat_msg', {"title":"ERROR", "msg":"missing query parameter"});
+    }
+});
+
 app.post("/musiclist", function(req, res) {
   if (req.body) {
     console.log(`---save ${req.body}`);
@@ -55,7 +69,8 @@ app.get("/musiclist", function(req, res) {
       if (err) {
         res.render('wechat_msg', {"title":"ERROR", "msg":`${err}`});
       } else {
-        res.render('wechat_list', {"title":"Song List", "items":msg.split('\n')});
+        var songs = msg.split('\n');
+        res.render('wechat_list', {"title":"歌单", "items": songs, "jukebox": req.query.key});
       }
     });
   } else {
@@ -81,7 +96,7 @@ app.get("/music", function(req, res) {
 });
 
 app.get('/', function (req, res) {
-  res.send('Hello World! from reachlin@gmail.com');
+  res.render('wechat_home');
 });
 
 app.get('/wechat', function (req, res) {
@@ -97,8 +112,8 @@ app.use('/wechat', wechat(config.wechat, wechat.text(function (message, req, res
   } else if (msg==='list') {
     res.reply([
       {
-        title: 'Music List',
-        description: 'Select the number of a song to play.',
+        title: '查看可选歌曲',
+        description: '请从列表中选择播放歌曲',
         url: 'http://www.bookxclub.com/musiclist?key='+jb
       }
     ]);
@@ -119,7 +134,7 @@ app.use('/wechat', wechat(config.wechat, wechat.text(function (message, req, res
           if (msg==='#STOP') {
             res.reply(`${jb}: Stopped.`);
           } else {
-            res.reply(`${jb}: msg`);
+            res.reply(`${jb}: ${msg}`);
           }
         } else {
           res.reply(`${jb}: Idle...`);

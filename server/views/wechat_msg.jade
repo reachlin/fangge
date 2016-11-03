@@ -4,4 +4,17 @@ block title
   title #{title}
 
 block body
-  div #{msg}
+    .weui-msg
+      .weui-msg__icon-area
+        i.weui-icon-success.weui-icon_msg
+      .weui-msg__text-area
+        h2.weui-msg__title #{title}
+        p.weui-msg__desc #{msg}
+      .weui-msg__opr-area
+        p.weui-btn-area
+          a.weui-btn.weui-btn_primary(href='javascript:history.back();') 确定
+      .weui-msg__extra-area
+        .weui-footer
+          p.weui-footer__links
+            a.weui-footer__link(href='javascript:void(0);') 底部链接文本
+          p.weui-footer__text Copyright © 2016 bookxclub.com
