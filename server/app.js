@@ -48,12 +48,12 @@ app.get("/music", function(req, res) {
   if (req.query && req.query.key) {
     console.log(`---get music for ${req.query.key}`);
     if (req.query.key in db_memory_play) {
-        res.send(db_memory_play[req.query.key]);
+        res.send(`${db_memory_play[req.query.key]}`);
     } else {
-        res.send("null");
+        res.send("#STOP");
     }
   } else {
-    res.send("null");
+    res.send("#STOP");
   }
 });
 
@@ -74,7 +74,7 @@ app.use('/wechat', wechat(config.wechat, wechat.text(function (message, req, res
   } else if (msg==='list') {
     if (jb in db_memory_music) {
         console.log(`list for ${jb} ${db_memory_music[jb]}`);
-        res.reply(db_memory_music[jb]);
+        res.reply(db_memory_music[jb].substring(0,600));
     } else {
         res.reply("empty");
     }
@@ -83,7 +83,7 @@ app.use('/wechat', wechat(config.wechat, wechat.text(function (message, req, res
     res.reply("stop");
   } else if (msg==='play') {
     if (jb in db_memory_play) {
-        res.reply(db_memory_play[jb]);
+        res.reply(`playing song ${db_memory_play[jb]}`);
     } else {
         db_memory_play[jb] = "#STOP";
         res.reply(db_memory_play[jb]);
@@ -91,7 +91,7 @@ app.use('/wechat', wechat(config.wechat, wechat.text(function (message, req, res
   } else if(msg.match(/^play\s+\d+/)) {
     var song = msg.match(/\d+/);
     db_memory_play[jb] = song;
-    res.reply(`play song ${song}`);
+    res.reply(`play song ${db_memory_play[jb]}`);
   } else {
     res.reply(utils.get_help());
   }
