@@ -35,7 +35,7 @@ app.get("/musiclist", function(req, res) {
   if (req.query && req.query.key) {
     console.log(`---get music for ${req.query.key}`);
     if (req.query.key in db_memory_music) {
-        res.send(db_memory_music[req.query.key]);
+        res.send(db_memory_music[req.query.key].replace('\n','<br>'));
     } else {
         res.send("null");
     }
@@ -73,8 +73,17 @@ app.use('/wechat', wechat(config.wechat, wechat.text(function (message, req, res
     res.reply(utils.get_help());
   } else if (msg==='list') {
     if (jb in db_memory_music) {
+        res.reply([
+          {
+            title: 'Music List',
+            description: 'Select the number of a song to play.',
+            url: 'http://www.bookxclub.com/musiclist?key='+jb
+          }
+        ]);
+        /*
         console.log(`list for ${jb} ${db_memory_music[jb]}`);
         res.reply(db_memory_music[jb].substring(0,600));
+        */
     } else {
         res.reply("empty");
     }
