@@ -10,6 +10,7 @@ const config = require('./config');
 const utils = require('./utils');
 
 var app = express();
+var user_jb = {};
 
 app.set('view engine', 'jade');
 app.set('views', 'views');
@@ -69,8 +70,12 @@ app.get("/musiclist", function(req, res) {
       if (err) {
         res.render('wechat_msg', {"title":"ERROR", "msg":`${err}`});
       } else {
-        var songs = msg.split('\n');
-        res.render('wechat_list', {"title":"歌单", "items": songs, "jukebox": req.query.key});
+        if (msg) {
+            var songs = msg.split('\n');
+            res.render('wechat_list', {"title":"歌单", "items": songs, "jukebox": req.query.key});
+        } else {
+            res.render('wechat_msg', {"title":"错误", "msg":"无此点唱机"});
+        }
       }
     });
   } else {
@@ -106,10 +111,40 @@ app.get('/wechat', function (req, res) {
 
 app.use('/wechat', wechat(config.wechat, wechat.text(function (message, req, res) {
   var msg = message.Content;
-  var jb = "test";
+  var user = message.FromUserName;
+  var jb = null;
+  if (user in user_jb) {
+    jb = `${user_jb[user]}`;
+  } else {
+    dbclient.hget(user, "user", function(err, msg) {
+      if (err) {
+        jb = null;
+      } else {
+        jb = msg;
+      }
+    });
+  }
   if (msg==='help' || msg==='?') {
     res.reply(utils.get_help());
-  } else if (msg==='list') {
+    return;
+  } else if (msg.match(/^jb\s+\w+/)) {
+    jb = msg.replace('jb', '');
+    jb = jb.replace(/\s/g, '');
+    user_jb[user] = jb;
+    dbclient.hset(user, "user", jb, function(err, msg) {
+      if (err) {
+        res.reply(`${jb}: 不能连接`);
+      } else {
+        res.reply(`${jb}: 连接成功`);
+      }
+    });
+    return;
+  }
+  if (!jb) {
+    res.reply(`${user} 请先选择点唱机`);
+    return;
+  }
+  if (msg==='list') {
     res.reply([
       {
         title: '查看可选歌曲',
