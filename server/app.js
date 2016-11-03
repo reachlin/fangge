@@ -73,7 +73,7 @@ app.use('/wechat', wechat(config.wechat, wechat.text(function (message, req, res
     res.reply(utils.get_help());
   } else if (msg==='list') {
     if (jb in db_memory_music) {
-        console(`list for ${jb} ${db_memory_music[jb]}`);
+        console.log(`list for ${jb} ${db_memory_music[jb]}`);
         res.reply(db_memory_music[jb]);
     } else {
         res.reply("empty");
