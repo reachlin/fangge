@@ -3,6 +3,7 @@
 const express = require('express');
 const wechat = require('wechat');
 const path = require('path');
+const redis = require('redis');
 const bodyParser = require('body-parser');
 
 const config = require('./config');
@@ -12,6 +13,8 @@ var db_memory_music = {};
 var db_memory_play = {};
 var app = express();
 
+app.set('view engine', 'jade');
+app.set('views', 'views');
 app.use(express.query());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.json());
@@ -20,39 +23,61 @@ app.use(bodyParser.urlencoded({
 }));
 
 
+var dbclient = redis.createClient(6379, "redis");
+
+dbclient.on('connect', function() {
+  console.log('redis connected');
+});
+
 app.post("/musiclist", function(req, res) {
   if (req.body) {
-      console.log(`---save ${req.body}`);
-      db_memory_music[req.body.jukebox] = req.body.songs;
-      res.send("0");
+    console.log(`---save ${req.body}`);
+    dbclient.hset(req.body.jukebox, "play", req.body.info, function(err, msg) {
+      console.log(`--play ${err}, ${msg}`);
+    });
+    dbclient.hset(req.body.jukebox, "jukebox", req.body.info, function(err, msg) {
+      console.log(`--jukebox ${err}, ${msg}`);
+    });
+    dbclient.hset(req.body.jukebox, "music", req.body.songs, function(err, msg) {
+      if (err) {
+        res.send("-1");
+      } else {
+        res.send("0");
+      }
+    });
   } else {
     res.send("-2");
   }
-
 });
 
 app.get("/musiclist", function(req, res) {
   if (req.query && req.query.key) {
     console.log(`---get music for ${req.query.key}`);
-    if (req.query.key in db_memory_music) {
-        res.send(db_memory_music[req.query.key].replace('\n','<br>'));
-    } else {
-        res.send("null");
-    }
+    dbclient.hget(req.query.key, "cmd", function(err, msg) {
+      if (err) {
+        res.render('wechat_msg', {"title":"ERROR", "msg":`${err}`});
+      } else {
+        res.render('wechat_list', {"title":"Song List", "items":msg});
+      }
+    });
   } else {
-    res.send("null");
+    res.render('wechat_msg', {"title":"ERROR", "msg":"missing query parameter"});
   }
 });
 
 app.get("/music", function(req, res) {
   if (req.query && req.query.key) {
     console.log(`---get music for ${req.query.key}`);
-    if (req.query.key in db_memory_play) {
-        res.send(`${db_memory_play[req.query.key]}`);
-    } else {
+    dbclient.hget(req.query.key, "play", function(err, msg) {
+      if (err) {
+        console.log(`---Error: get music for ${req.query.key} ${err}`);
         res.send("#STOP");
-    }
+      } else {
+        res.send(msg);
+      }
+    });
   } else {
+    console.log(`---Error: get music for ${req.query.key} empty`);
     res.send("#STOP");
   }
 });
@@ -72,35 +97,46 @@ app.use('/wechat', wechat(config.wechat, wechat.text(function (message, req, res
   if (msg==='help' || msg==='?') {
     res.reply(utils.get_help());
   } else if (msg==='list') {
-    if (jb in db_memory_music) {
-        res.reply([
-          {
-            title: 'Music List',
-            description: 'Select the number of a song to play.',
-            url: 'http://www.bookxclub.com/musiclist?key='+jb
-          }
-        ]);
-        /*
-        console.log(`list for ${jb} ${db_memory_music[jb]}`);
-        res.reply(db_memory_music[jb].substring(0,600));
-        */
-    } else {
-        res.reply("empty");
-    }
+    res.reply([
+      {
+        title: 'Music List',
+        description: 'Select the number of a song to play.',
+        url: 'http://www.bookxclub.com/musiclist?key='+jb
+      }
+    ]);
   } else if (msg==='stop') {
-    db_memory_play[jb] = "#STOP";
-    res.reply("stop");
+    dbclient.hset(jb, "play", "#STOP", function(err, msg) {
+      if (err) {
+        res.reply(`${jb}: Cant stop the music.`);
+      } else {
+        res.reply(`${jb}: Music stopped.`);
+      }
+    });
   } else if (msg==='play') {
-    if (jb in db_memory_play) {
-        res.reply(`playing song ${db_memory_play[jb]}`);
-    } else {
-        db_memory_play[jb] = "#STOP";
-        res.reply(db_memory_play[jb]);
-    }
+    dbclient.hget(jb, "play", function(err, msg) {
+      if (err) {
+        res.reply(`${jb}: Error!`);
+      } else {
+        if (msg) {
+          if (msg==='#STOP') {
+            res.reply(`${jb}: Stopped.`);
+          } else {
+            res.reply(`${jb}: msg`);
+          }
+        } else {
+          res.reply(`${jb}: Idle...`);
+        }
+      }
+    });
   } else if(msg.match(/^play\s+\d+/)) {
     var song = msg.match(/\d+/);
-    db_memory_play[jb] = song;
-    res.reply(`play song ${db_memory_play[jb]}`);
+    dbclient.hset(jb, "play", song, function(err, msg) {
+      if (err) {
+        res.reply(`${jb}: Cant play the song ${song}`);
+      } else {
+        res.reply(`${jb}: Playing song ${song}...`);
+      }
+    });
   } else {
     res.reply(utils.get_help());
   }

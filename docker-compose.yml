@@ -5,8 +5,10 @@ services:
     ports:
      - "80:8080"
     depends_on:
+     - redis
      - mongo
-  mongo:
-    image: mongo
+  redis:
+    image: redis
+    command: redis-server /data/redis.conf
     volumes:
-     - ./data:/data/db
+     - ./data:/data

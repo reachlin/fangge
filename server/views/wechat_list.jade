@@ -1,0 +1,16 @@
+extends wechat_base
+
+block title
+  title #{title}
+
+block body
+  .weui-cells__title 带跳转的列表项
+  .weui-cells
+    a.weui-cell.weui-cell_access(href='javascript:;')
+      .weui-cell__bd
+        p #{items}
+      .weui-cell__ft
+    a.weui-cell.weui-cell_access(href='javascript:;')
+      .weui-cell__bd
+        p song 2
+      .weui-cell__ft
