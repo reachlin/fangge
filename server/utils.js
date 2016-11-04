@@ -8,5 +8,15 @@ module.exports = {
     msg += "5. 关于: about\n";
     msg += "---2016---\n   by reachlin@gmail.com\n";
     return msg;
+  },
+  create_id: function(length) {
+        var text = "";
+        var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+        for( var i=0; i < length; i++ ) {
+            text += possible.charAt(Math.floor(Math.random() * possible.length));
+        }
+
+        return text;
   }
 };

@@ -1,0 +1,12 @@
+- name: copy over server code
+  copy: src=../../server dest={{ STAGE }}
+- name: copy into container
+  command: docker cp {{ STAGE }}/server/ {{ CONTAINER_SERVER }}:/var/data/
+- name: copy over compose file
+  copy: src=../../docker-compose.yml dest={{ STAGE }}/
+- name: restart server
+  command: docker-compose restart server
+  args:
+    chdir: "{{ STAGE }}"
+- name: clean up
+  file: path={{ STAGE }}/server state=absent
