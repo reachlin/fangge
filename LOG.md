@@ -47,3 +47,11 @@ ctl.!default {
 }
 
 ```
+
+## 11/04/2016
+* [wechat doc](http://mp.weixin.qq.com/wiki/home/index.html)
+* [my sample code](http://git.oschina.net/reachlin/samples)
+* [jade to html](http://html2jade.org/)
+* [weui](https://github.com/weui/weui)
+* [bootstrap](http://getbootstrap.com/getting-started/)
+* [wechat bot](https://github.com/node-webot/wechat)
