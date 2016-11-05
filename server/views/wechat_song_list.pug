@@ -1,0 +1,13 @@
+extends wechat_base.pug
+
+block title
+  title #{title}
+
+block body
+  .weui-cells__title #{jukebox} - #{title} - #{current}
+  .weui-cells
+    each item, index in items
+      a.weui-cell.weui-cell_access(href='/playsong?jukebox='+jukebox+'&song='+(index+1)+'&token='+token+'&user='+user)
+        .weui-cell__bd
+          p #{item}
+        .weui-cell__ft #{index+1}

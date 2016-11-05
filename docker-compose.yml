@@ -1,12 +1,14 @@
 version: '2'
 services:
   server:
+    container_name: fangge_server
     build: server
     ports:
      - "80:8080"
     depends_on:
      - redis
   redis:
+    container_name: fangge_redis
     image: redis
     command: redis-server /data/redis.conf
     volumes:

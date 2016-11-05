@@ -1,0 +1,2 @@
+[server]
+localbox ansible_user="lincai"

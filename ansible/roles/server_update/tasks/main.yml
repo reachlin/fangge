@@ -1,12 +1,58 @@
 - name: copy over server code
-  copy: src=../../server dest={{ STAGE }}
+  copy: src=../server dest={{ STAGE }}
+  tags:
+    - copy
+    - deploy
+    - update
+- name: mkdir data
+  file: path={{ STAGE }}/data/ state=directory
+  tags:
+    - copy
+    - deploy
+    - update
+- name: copy over redis config
+  copy: src=../data/redis.conf dest={{ STAGE }}/data/redis.conf
+  tags:
+    - copy
+    - deploy
+    - update
+- name: include vault
+  include_vars: file=vault/wechat.yml
+  tags:
+    - copy
+    - deploy
+    - update
+- name: copy over config
+  template: src=config.js.j2 dest={{ STAGE }}/server/config.js
+  tags:
+    - copy
+    - deploy
+    - update
 - name: copy into container
-  command: docker cp {{ STAGE }}/server/ {{ CONTAINER_SERVER }}:/var/data/
+  command: docker cp {{ STAGE }}/server/ {{ CONTAINER_SERVER }}:/var/app/
+  tags:
+    - update
 - name: copy over compose file
-  copy: src=../../docker-compose.yml dest={{ STAGE }}/
+  copy: src=../docker-compose.yml dest={{ STAGE }}/
+  tags:
+    - copy
+    - deploy
+    - update
+- name: build server images
+  command: docker-compose build
+  args:
+    chdir: "{{ STAGE }}"
+  tags:
+    - deploy
+- name: create server containers
+  command: docker-compose up -d
+  args:
+    chdir: "{{ STAGE }}"
+  tags:
+    - deploy
 - name: restart server
   command: docker-compose restart server
   args:
     chdir: "{{ STAGE }}"
-- name: clean up
-  file: path={{ STAGE }}/server state=absent
+  tags:
+    - update

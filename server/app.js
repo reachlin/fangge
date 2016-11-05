@@ -12,7 +12,7 @@ const utils = require('./utils');
 var app = express();
 var user_jb = {};
 
-app.set('view engine', 'jade');
+app.set('view engine', 'pug');
 app.set('views', 'views');
 app.use(express.query());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -34,7 +34,7 @@ app.get("/playsong", function(req, res) {
           if (err) {
             res.render('wechat_msg', {"title":"INFO", "msg":"点歌失败"});
           } else {
-            res.render('wechat_msg', {"title":"INFO", "msg":"点歌成功，将在当前歌曲结束后播放。"});
+            res.render('wechat_msg', {"title":"INFO", "msg":`点歌[${req.query.song}]成功，将在当前歌曲结束后播放。`});
           }
         });
     } else {
@@ -48,7 +48,7 @@ app.post("/musiclist", function(req, res) {
     dbclient.hset(req.body.jukebox, "play", "#STOP", function(err, msg) {
       console.log(`--play ${err}, ${msg}`);
     });
-    dbclient.hset(req.body.jukebox, "jukebox", req.body.info, function(err, msg) {
+    dbclient.hset("jukebox", req.body.jukebox, req.body.info, function(err, msg) {
       console.log(`--jukebox ${err}, ${msg}`);
     });
     dbclient.hset(req.body.jukebox, "music", req.body.songs, function(err, msg) {
@@ -63,16 +63,35 @@ app.post("/musiclist", function(req, res) {
   }
 });
 
-app.get("/musiclist", function(req, res) {
-  if (req.query && req.query.key) {
-    console.log(`---get music for ${req.query.key}`);
-    dbclient.hget(req.query.key, "music", function(err, msg) {
+app.get("/jblist", function(req, res) {
+  if (req.query && req.query.user && req.query.token) {
+    dbclient.hgetall("jukebox", function(err, msg) {
       if (err) {
         res.render('wechat_msg', {"title":"ERROR", "msg":`${err}`});
       } else {
         if (msg) {
-            var songs = msg.split('\n');
-            res.render('wechat_list', {"title":"歌单", "items": songs, "jukebox": req.query.key});
+          res.render('wechat_jb_list', {"title":"点唱机", "items": msg, "token": req.query.token, "user": req.query.user});
+        } else {
+          res.render('wechat_msg', {"title":"错误", "msg":"无点唱机"});
+        }
+      }
+    });
+  } else {
+    res.render('wechat_msg', {"title":"ERROR", "msg":"missing query parameter"});
+  }
+});
+
+app.get("/musiclist", function(req, res) {
+  if (req.query && req.query.key && req.query.user && req.query.token) {
+    console.log(`---get music for ${req.query.key}`);
+    dbclient.hgetall(req.query.key, function(err, msg) {
+      if (err) {
+        res.render('wechat_msg', {"title":"ERROR", "msg":`${err}`});
+      } else {
+        if (msg) {
+            var songs = msg["music"].split('\n');
+            var current_song = msg["play"]
+            res.render('wechat_song_list', {"title":"歌单", "items": songs, "jukebox": req.query.key, "current": current_song, "token": req.query.token, "user": req.query.user});
         } else {
             res.render('wechat_msg', {"title":"错误", "msg":"无此点唱机"});
         }
@@ -112,25 +131,13 @@ app.get('/wechat', function (req, res) {
 app.use('/wechat', wechat(config.wechat, wechat.text(function (message, req, res) {
   var msg = message.Content;
   var user = message.FromUserName;
-  var jb = null;
-  if (user in user_jb) {
-    jb = `${user_jb[user]}`;
-  } else {
-    dbclient.hget(user, "user", function(err, msg) {
-      if (err) {
-        jb = null;
-      } else {
-        jb = msg;
-      }
-    });
-  }
+  var token = 'testtoken';
+  var jb = 'test';
   if (msg==='help' || msg==='?') {
     res.reply(utils.get_help());
-    return;
   } else if (msg.match(/^jb\s+\w+/)) {
     jb = msg.replace('jb', '');
     jb = jb.replace(/\s/g, '');
-    user_jb[user] = jb;
     dbclient.hset(user, "user", jb, function(err, msg) {
       if (err) {
         res.reply(`${jb}: 不能连接`);
@@ -138,21 +145,19 @@ app.use('/wechat', wechat(config.wechat, wechat.text(function (message, req, res
         res.reply(`${jb}: 连接成功`);
       }
     });
-    return;
-  }
-  if (!jb) {
-    res.reply(`${user} 请先选择点唱机`);
-    return;
-  }
-  if (msg==='list') {
+  } else if (msg.match(/^list\s+\w+/)) {
+    jb = msg.replace('list', '');
+    jb = jb.replace(/\s/g, '');
     res.reply([
       {
         title: '查看可选歌曲',
         description: '请从列表中选择播放歌曲',
-        url: 'http://www.bookxclub.com/musiclist?key='+jb
+        url: `http://www.bookxclub.com/musiclist?key=${jb}&token=${token}&user=${user}`
       }
     ]);
-  } else if (msg==='stop') {
+  } else if (msg.match(/^stop\s+\w+/)) {
+    jb = msg.replace('stop', '');
+    jb = jb.replace(/\s/g, '');
     dbclient.hset(jb, "play", "#STOP", function(err, msg) {
       if (err) {
         res.reply(`${jb}: Cant stop the music.`);
@@ -160,7 +165,9 @@ app.use('/wechat', wechat(config.wechat, wechat.text(function (message, req, res
         res.reply(`${jb}: Music stopped.`);
       }
     });
-  } else if (msg==='play') {
+  } else if (msg.match(/^current\s+\w+/)) {
+    jb = msg.replace('current', '');
+    jb = jb.replace(/\s/g, '');
     dbclient.hget(jb, "play", function(err, msg) {
       if (err) {
         res.reply(`${jb}: Error!`);
@@ -176,17 +183,14 @@ app.use('/wechat', wechat(config.wechat, wechat.text(function (message, req, res
         }
       }
     });
-  } else if(msg.match(/^play\s+\d+/)) {
-    var song = msg.match(/\d+/);
-    dbclient.hset(jb, "play", song, function(err, msg) {
-      if (err) {
-        res.reply(`${jb}: Cant play the song ${song}`);
-      } else {
-        res.reply(`${jb}: Playing song ${song}...`);
-      }
-    });
   } else {
-    res.reply(utils.get_help());
+    res.reply([
+      {
+        title: '附近的点唱机',
+        description: '请从列表中选择播放歌曲的点唱机',
+        url: `http://www.bookxclub.com/jblist?user=${user}&token=${token}`
+      }
+    ]);
   }
 })));
 

@@ -1,0 +1,13 @@
+extends wechat_base.pug
+
+block title
+  title #{title}
+
+block body
+  .weui-cells__title #{title}
+  .weui-cells
+    each item, index in items
+      a.weui-cell.weui-cell_access(href='/musiclist?key='+index+'&token='+token+'&user='+user)
+        .weui-cell__bd
+          p #{index}
+        .weui-cell__ft #{item}
