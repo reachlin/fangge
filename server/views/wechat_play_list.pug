@@ -1,0 +1,13 @@
+extends wechat_base.pug
+
+block title
+  title #{title}
+
+block body
+  .weui-cells__title 点唱机 #{jukebox} 的#{title}，共#{items.length}首
+  .weui-cells
+    each item in items
+      a.weui-cell.weui-cell_access(href='javascript:;')
+        .weui-cell__bd
+          p #{item.index}
+        .weui-cell__ft #{item.name}

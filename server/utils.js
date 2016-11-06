@@ -18,5 +18,16 @@ module.exports = {
         }
 
         return text;
+  },
+  check_hash: function(text, hash) {
+    var str = `${text}ACEGREWREXafrewCDD123754Mh`;
+    var result = str.split('').reduce((prevHash, currVal) => ((prevHash << 5) - prevHash) + currVal.charCodeAt(0), 0);
+    console.log(`check_hash ${text},${hash},${result}`);
+    if (hash===result) {
+      return true;
+    } else if (text==='test' && hash==='testtoken') { // remove it, this is only for test
+      return true;
+    }
+    return false;
   }
 };

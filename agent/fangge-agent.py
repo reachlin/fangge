@@ -20,6 +20,7 @@ DELAY_SHORT = 7
 URL_PREFIX = "http://www.bookxclub.com/";
 PLAYLIST = "test.m3u"
 song_list = []
+TOKEN = "testtoken"
 
 def init():
     print "init..."
@@ -61,11 +62,20 @@ def register_music():
 
 def job():
     print("%s play music..." % time.strftime("%Y/%m/%d-%H:%M:%S"))
-    song = urllib2.urlopen(URL_PREFIX+"music?key=%s" % JB_ID).read()
+    values = {
+        'jukebox': JB_ID,
+        'token': TOKEN
+    }
+    data = urllib.urlencode(values)
+    req = urllib2.Request(URL_PREFIX+"playlist/delete", data)
+    response = urllib2.urlopen(req)
+    song = response.read()
+
     if song:
         print("...play song: "+song)
-        if song == "#STOP":
-            print("stop")
+        p = re.compile(r'^#STOP')
+        if p.match(song):
+            print("...received: %s" % song)
             time.sleep(DELAY)
         else:
             try:
@@ -79,7 +89,7 @@ def job():
                 print("play error: %s" % song)
             time.sleep(DELAY_SHORT)
     else:
-        print("no song found.")
+        print("no song received.")
         time.sleep(DELAY)
 
 

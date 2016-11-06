@@ -119,6 +119,87 @@ app.get("/music", function(req, res) {
   }
 });
 
+// show play list of a jukebox after a user order a song
+// curl -v http://localbox/playlist?jukebox=test&user=developer&token=testtoken
+app.get("/playlist", function(req, res) {
+  if (req.query && req.query.jukebox) {
+    dbclient.lrange("playlist_"+req.query.jukebox, 0, -1, function(err, playlist) {
+      if (err) {
+        res.render('wechat_msg', {"title":"ERROR", "msg":`获取歌单失败:${err}`});
+      } else {
+        dbclient.hget(req.query.jukebox, "music", function(err, songlist) {
+          if (err) {
+            res.render('wechat_msg', {"title":"ERROR", "msg":`${err}`});
+          } else {
+            var items;
+            if (songlist) {
+              items = songlist.split('\n');
+            } else {
+              items = [];
+            }
+            var rtn = [];
+            for (var song in playlist) {
+              var index = parseInt(`${playlist[song]}`)-1;
+              if (index>=0 && index < items.length) {
+                rtn.push({"index":playlist[song], "name":items[index]});
+              }
+            }
+            res.render('wechat_play_list', {"title":"播放队列", "items": rtn, "jukebox": req.query.jukebox});
+          }
+        });
+      }
+    });
+  } else {
+    res.render('wechat_msg', {"title":"ERROR", "msg":"missing query parameter"});
+  }
+});
+
+// agent plays a song
+// curl -v --data "jukebox=test&token=testtoken" http://localbox/playlist/delete
+app.post("/playlist/delete", function(req, res) {
+  if (req.body && req.body.jukebox && req.body.token) {
+    if (utils.check_hash(req.body.jukebox, req.body.token)) {
+      dbclient.lpop("playlist_"+req.body.jukebox, function(err, msg) {
+        if (err) {
+          res.send(`#STOP:${err}`);
+        } else {
+          if (msg) {
+            res.send(msg);
+          } else {
+            res.send('#STOP:empty list');
+          }
+        }
+      });
+    } else {
+      res.send('#STOP:unauthorized');
+    }
+  } else {
+    res.send('#STOP:missing parameters');
+  }
+});
+
+// user order a song
+// curl -v --data "jukebox=test&user=developer&token=testtoken&song=1" http://localbox/playlist
+app.post("/playlist", function(req, res) {
+  if (req.body && req.body.jukebox && req.body.user && req.body.token && req.body.song) {
+    dbclient.get('session_token_'+req.body.user, function(err, msg) {
+      if (req.body.token===msg || req.body.token==='testtoken') { // TODO: remove the testtoken
+        dbclient.rpush("playlist_"+req.body.jukebox, req.body.song, function(err, msg) {
+          if (err) {
+            res.render('wechat_msg', {"title":"ERROR", "msg":`点歌失败:${err}`});
+          } else {
+            res.redirect('/playlist?jubebox=${req.body.jukebox}&user=${req.body.user}&token=${req.body.token}');
+          }
+        }); 
+      } else {
+        res.render('wechat_msg', {"title":"ERROR", "msg":"unauthorized user"});
+      }
+    });
+  } else {
+    res.render('wechat_msg', {"title":"ERROR", "msg":"missing query parameter"});
+  }
+});
+
 app.get('/', function (req, res) {
   res.render('wechat_home');
 });
