@@ -1,0 +1,2 @@
+[agent]
+raspberrypi ansible_user="pi" ansible_become="true"

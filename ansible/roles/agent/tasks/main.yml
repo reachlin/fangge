@@ -1,0 +1,4 @@
+- name: Update repositories cache and install sox
+  apt:
+    name: sox
+    update_cache: yes
