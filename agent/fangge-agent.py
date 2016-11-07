@@ -3,6 +3,8 @@
 # add the next line to /etc/rc.local
 # cd /home/pi/;./fangge-agent.py
 
+import logging
+import traceback
 import time
 import subprocess
 import urllib
@@ -11,6 +13,7 @@ import re
 import argparse
 from os import listdir
 from os.path import isfile, join
+
 
 
 JB_ID = "test"
@@ -30,7 +33,7 @@ def play_song(song):
     if re.search("Darwin", uname):
         return subprocess.call("/Applications/VLC.app/Contents/MacOS/VLC --play-and-exit -I dummy \"%s\"" % song, shell=True)
     elif re.search("raspberrypi", uname):
-        return subprocess.call(["omxplayer", "-o", "alsa", song])
+        return subprocess.call(["cvlc", "--play-and-exit", "-I", "dummy", song])
     else:
         print "unknow system, don't know how to play"
         return -1
@@ -101,15 +104,23 @@ parser.add_argument('--path', dest='path', default='Music',
                    help='path to music')
 parser.add_argument('--url', dest='url', default='http://www.bookxclub.com/', help='server url')
 parser.add_argument('--info', dest='info', default="", help='server url')
+parser.add_argument('--token', dest='token', required='true', help='token to connect to the server')
 
 args = parser.parse_args()
 JB_ID = args.id
 PATH = args.path
 URL_PREFIX = args.url
+TOKEN=args.token
 print "ID: %s, Music folder: %s" % (JB_ID, PATH)
 
 time.sleep(DELAY_SHORT)    # without this rc.local will fail!
 init()
 register_music()
 while True:
-    job()
+    try:
+        job()
+    except KeyboardInterrupt:
+        print("Bye!")
+        import sys;sys.exit(0)
+    except Exception as e:
+        logging.error(traceback.format_exc())

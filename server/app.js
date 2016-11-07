@@ -186,17 +186,17 @@ app.post("/playlist", function(req, res) {
       if (req.body.token===msg || req.body.token==='testtoken') { // TODO: remove the testtoken
         dbclient.rpush("playlist_"+req.body.jukebox, req.body.song, function(err, msg) {
           if (err) {
-            res.render('wechat_msg', {"title":"ERROR", "msg":`点歌失败:${err}`});
+            res.send({"title":"ERROR", "msg":`点歌失败:${err}`});
           } else {
-            res.redirect('/playlist?jubebox=${req.body.jukebox}&user=${req.body.user}&token=${req.body.token}');
+            res.send({"title":"OK", "msg":`点歌[${req.body.song}]成功`});
           }
         }); 
       } else {
-        res.render('wechat_msg', {"title":"ERROR", "msg":"unauthorized user"});
+        res.send({"title":"ERROR", "msg":`unauthorized user`});
       }
     });
   } else {
-    res.render('wechat_msg', {"title":"ERROR", "msg":"missing query parameter"});
+    res.send({"title":"ERROR", "msg":`missing parameters`});
   }
 });
 

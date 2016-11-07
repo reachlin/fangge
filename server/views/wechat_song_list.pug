@@ -1,5 +1,21 @@
 extends wechat_base.pug
-
+block script
+  script.
+    function playSong(index) {
+      $.post("/playlist",
+        { user: "#{user}", token: "#{token}", jukebox:"#{jukebox}", song:index },
+        function(data, status) {
+          if (data) {
+            $("#title").text(data['title']);
+            $("#msg").text(data['msg']);
+            $("#popup").show();
+          }
+        });
+    }
+    function showPlayList() {
+      $("#popup").hide();
+      window.open('/playlist?jukebox=#{jukebox}');
+    }
 block title
   title #{title}
 
@@ -7,7 +23,16 @@ block body
   .weui-cells__title #{jukebox} - #{title} - #{current}
   .weui-cells
     each item, index in items
-      a.weui-cell.weui-cell_access(href='/playsong?jukebox='+jukebox+'&song='+(index+1)+'&token='+token+'&user='+user)
+      a.weui-cell.weui-cell_access(href='javascript:playSong('+(index+1)+')')
         .weui-cell__bd
           p #{item}
         .weui-cell__ft #{index+1}
+  #popup(style='display: none;')
+    .weui-mask
+    .weui-dialog
+      .weui-dialog__hd
+        strong#title.weui-dialog__title
+      #msg.weui-dialog__bd
+      .weui-dialog__ft
+        a.weui-dialog__btn.weui-dialog__btn_primary(href='javascript:showPlayList()') 确定
+

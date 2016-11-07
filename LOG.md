@@ -56,28 +56,26 @@ ctl.!default {
 * [bootstrap](http://getbootstrap.com/getting-started/)
 * [wechat bot](https://github.com/node-webot/wechat)
 
-
+## 11/07/2016
+* deploy to raspberrypi
+```
+ansible-playbook -i inventory/agent --extra-vars "AGENT_ID=raspberrypi AGENT_TOKEN=1483551723" agent.yml
+ansible-playbook -i inventory/agent agent.yml
+```
+* rasbian wifi config file
+```
 /etc/wpa_supplicant/wpa_supplicant.conf
 
 network={
   ssid="foxriver"
-  psk="gpscookie"
+  psk="xxxxxx"
   key_mgmt=WPA-PSK
 }
-
-network={
-ssid="foxriver"
-psk="gpscookie"
-
-# Protocol type can be: RSN (for WP2) and WPA (for WPA1)
-proto=WPA
-
-# Key management type can be: WPA-PSK or WPA-EAP (Pre-Shared or Enterprise)
-key_mgmt=WPA-PSK
-
-# Pairwise can be CCMP or TKIP (for WPA2 or WPA1)
-pairwise=TKIP
-
-#Authorization option should be OPEN for both WPA1/WPA2 (in less commonly used are SHARED and LEAP)
-auth_alg=OPEN
-}
+```
+* mpd mpc could be next player [doc](https://www.musicpd.org/doc/user/)
+```
+mpc update
+mpc ls|mpc add
+mpc play
+mpc current
+```
