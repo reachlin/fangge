@@ -1,4 +1,6 @@
-before_script: cd server
 language: node_js
 node_js:
-  - "4.2.x"
+  - 4.2.0
+  - 4.2
+  - node
+before_script: cd server
