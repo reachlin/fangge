@@ -3,4 +3,6 @@ node_js:
   - 4.2.0
   - 4.2
   - node
-before_script: cd server
+before_script:
+  - cd server
+  - - npm install -g vows
