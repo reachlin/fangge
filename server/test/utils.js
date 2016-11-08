@@ -1,7 +1,7 @@
-const vows = require('vows'),
-const assert = require('assert');
+var vows = require('vows'),
+var assert = require('assert');
 
-const utils = require('../utils');
+var utils = require('../utils');
 
 vows.describe('utils').addBatch({
   'test create_id': {
