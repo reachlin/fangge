@@ -5,4 +5,4 @@ node_js:
   - node
 before_script:
   - cd server
-  - - npm install -g vows
+  - npm install -g vows
