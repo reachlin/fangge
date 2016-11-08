@@ -12,8 +12,6 @@
         "express": "4.13.x",
         "wechat": "2.0.x",
         "pug": "*",
-        "redis": "*",
-        "vows": "*",
-        "assert": "*"
+        "redis": "*"
     }
 }
