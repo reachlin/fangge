@@ -1,0 +1,4 @@
+before_script: cd server
+language: node_js
+node_js:
+  - "4.2.x"
