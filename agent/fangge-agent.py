@@ -55,7 +55,7 @@ def register_music():
     values = {
             'jukebox' : JB_ID,
             'info': get_jb_info(),
-            'songs' : '\n'.join(onlyfiles)
+            'songs' : '\n'.join(song_list)
             }
     data = urllib.urlencode(values)
     req = urllib2.Request(url, data)
@@ -65,15 +65,8 @@ def register_music():
 
 def job():
     print("%s play music..." % time.strftime("%Y/%m/%d-%H:%M:%S"))
-    values = {
-        'jukebox': JB_ID,
-        'token': TOKEN
-    }
-    data = urllib.urlencode(values)
-    req = urllib2.Request(URL_PREFIX+"playlist/delete", data)
-    response = urllib2.urlopen(req)
-    song = response.read()
 
+    song = urllib2.urlopen(URL_PREFIX+'playlist/current?jukebox='+JB_ID).read()
     if song:
         print("...play song: "+song)
         p = re.compile(r'^#STOP')
@@ -84,12 +77,23 @@ def job():
             try:
                 p = re.compile(r'^\d+')
                 if p.match(song):
-                    song = song_list[int(song)-1]
-                song = PATH+"/"+song
-                rtn = play_song(song)
+                    song_name = song_list[int(song)-1]
+                song_name = PATH+"/"+song_name
+                rtn = play_song(song_name)
                 print ("song play returned: %s" % rtn)
             except:
                 print("play error: %s" % song)
+            # delete song from the server whatever
+            values = {
+                'jukebox': JB_ID,
+                'token': TOKEN
+            }
+            data = urllib.urlencode(values)
+            req = urllib2.Request(URL_PREFIX+"playlist/delete", data)
+            response = urllib2.urlopen(req)
+            song_deleted = response.read()
+            if song != song_deleted:
+                print("...inconsistent songs: %s - %s" % (song, song_deleted))
             time.sleep(DELAY_SHORT)
     else:
         print("no song received.")

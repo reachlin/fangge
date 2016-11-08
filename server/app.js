@@ -45,9 +45,6 @@ app.get("/playsong", function(req, res) {
 app.post("/musiclist", function(req, res) {
   if (req.body) {
     console.log(`---save ${req.body}`);
-    dbclient.hset(req.body.jukebox, "play", "#STOP", function(err, msg) {
-      console.log(`--play ${err}, ${msg}`);
-    });
     dbclient.hset("jukebox", req.body.jukebox, req.body.info, function(err, msg) {
       console.log(`--jukebox ${err}, ${msg}`);
     });
@@ -90,8 +87,7 @@ app.get("/musiclist", function(req, res) {
       } else {
         if (msg) {
             var songs = msg["music"].split('\n');
-            var current_song = msg["play"]
-            res.render('wechat_song_list', {"title":"歌单", "items": songs, "jukebox": req.query.key, "current": current_song, "token": req.query.token, "user": req.query.user});
+            res.render('wechat_song_list', {"title":"歌单", "items": songs, "jukebox": req.query.key, "token": req.query.token, "user": req.query.user});
         } else {
             res.render('wechat_msg', {"title":"错误", "msg":"无此点唱机"});
         }
@@ -99,23 +95,6 @@ app.get("/musiclist", function(req, res) {
     });
   } else {
     res.render('wechat_msg', {"title":"ERROR", "msg":"missing query parameter"});
-  }
-});
-
-app.get("/music", function(req, res) {
-  if (req.query && req.query.key) {
-    console.log(`---get music for ${req.query.key}`);
-    dbclient.hget(req.query.key, "play", function(err, msg) {
-      if (err) {
-        console.log(`---Error: get music for ${req.query.key} ${err}`);
-        res.send("#STOP");
-      } else {
-        res.send(msg);
-      }
-    });
-  } else {
-    console.log(`---Error: get music for ${req.query.key} empty`);
-    res.send("#STOP");
   }
 });
 
@@ -155,6 +134,22 @@ app.get("/playlist", function(req, res) {
 });
 
 // agent plays a song
+// curl -V http://localbox/playlist/current?jukebox=test
+app.get("/playlist/current", function(req, res) {
+  if (req.query && req.query.jukebox) {
+    dbclient.lindex("playlist_"+req.query.jukebox, 0, function(err, msg) {
+      if (err) {
+        res.send(`#STOP:${err}`);
+      } else {
+        res.send(msg);
+      }
+    });
+  } else {
+    res.send('#STOP:missing parameters');
+  }
+});
+
+// agent delete a song after plays it
 // curl -v --data "jukebox=test&token=testtoken" http://localbox/playlist/delete
 app.post("/playlist/delete", function(req, res) {
   if (req.body && req.body.jukebox && req.body.token) {
