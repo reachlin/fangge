@@ -55,7 +55,8 @@ def register_music():
     values = {
             'jukebox' : JB_ID,
             'info': get_jb_info(),
-            'songs' : '\n'.join(song_list)
+            'songs': '\n'.join(song_list),
+            'token': TOKEN
             }
     data = urllib.urlencode(values)
     req = urllib2.Request(url, data)

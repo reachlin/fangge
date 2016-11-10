@@ -1,9 +1,9 @@
 module.exports = {
   get_help: function() {
-    var msg = "===云唱机===\n";
-    msg += "输入任意字符查找附近的点唱机，\n"
+    var msg = "=====云点歌=====\n";
+    msg += "    输入任意字符查找附近的歌曲播放机，"
     msg += "然后就可以浏览并且点播喜欢的音乐了！\n"
-    msg += "===2016===\nby reachlin@gmail.com\n";
+    msg += "=====2016=====\nby reachlin@gmail.com\n";
     return msg;
   },
   create_id: function(length) {

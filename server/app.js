@@ -28,38 +28,49 @@ dbclient.on('connect', function() {
   console.log('redis connected');
 });
 
-app.get("/playsong", function(req, res) {
-    if (req.query && req.query.jukebox && req.query.song) {
-        dbclient.hset(req.query.jukebox, "play", req.query.song, function(err, msg) {
-          if (err) {
-            res.render('wechat_msg', {"title":"INFO", "msg":"点歌失败"});
-          } else {
-            res.render('wechat_msg', {"title":"INFO", "msg":`点歌[${req.query.song}]成功，将在当前歌曲结束后播放。`});
-          }
-        });
-    } else {
-        res.render('wechat_msg', {"title":"ERROR", "msg":"missing query parameter"});
-    }
-});
-
+// the agent register itself after boot
 app.post("/musiclist", function(req, res) {
-  if (req.body) {
-    console.log(`---save ${req.body}`);
-    dbclient.hset("jukebox", req.body.jukebox, req.body.info, function(err, msg) {
-      console.log(`--jukebox ${err}, ${msg}`);
-    });
-    dbclient.hset(req.body.jukebox, "music", req.body.songs, function(err, msg) {
-      if (err) {
-        res.send("-1");
-      } else {
-        res.send("0");
-      }
-    });
+  if (req.body && req.body.jukebox && req.body.token) {
+    if (utils.check_hash(req.body.jukebox, req.body.token)) {
+      console.log(`---save ${req.body}`);
+      dbclient.hset("jukebox", req.body.jukebox, req.body.info, function(err, msg) {
+        console.log(`--jukebox ${err}, ${msg}`);
+      });
+      dbclient.hset(req.body.jukebox, "music", req.body.songs, function(err, msg) {
+        if (err) {
+          res.send({"error":`${err}`});
+        } else {
+          res.send({"data":"OK"});
+        }
+      });
+    } else {
+      res.send({"error":"unauthorized agent"});
+    }
   } else {
-    res.send("-2");
+    res.send({"error":"missing parameters"});
   }
 });
 
+// get jukebox heartbeat
+app.get("/jb", function(req, res) {
+  if (req.query && req.query.jukebox) {
+    dbclient.get("heartbeat_"+req.query.jukebox, function(err, msg) {
+      if (err) {
+        res.send({"error":`${err}`});
+      } else {
+        if (msg) {
+          res.send({"jukebox": req.query.jukebox, "heartbeat": msg});
+        } else {
+          res.send({"error":`null`});
+        }
+      }
+    });
+  } else {
+    res.send({"error":`missing parameters`});
+  }
+});
+
+// get jukebox list
 app.get("/jblist", function(req, res) {
   if (req.query && req.query.user && req.query.token) {
     dbclient.hgetall("jukebox", function(err, msg) {
@@ -137,6 +148,23 @@ app.get("/playlist", function(req, res) {
 // curl -V http://localbox/playlist/current?jukebox=test
 app.get("/playlist/current", function(req, res) {
   if (req.query && req.query.jukebox) {
+    var dt = new Date();
+    var now = dt.getTime();
+    dbclient.get("heartbeat_"+req.query.jukebox, function(err, msg) {
+      if (err || !msg) {
+        dbclient.set("heartbeat_"+req.query.jukebox, now, function(err, msg) {
+          if (!err) {
+            dbclient.expire("heartbeat_"+req.query.jukebox, 365, function(err, msg) {
+              console.log(`${req.query.jukebox} - ${now} - 365 error ${err}`);
+            });
+          }
+        });
+      } else {
+        dbclient.expire("heartbeat_"+req.query.jukebox, 365, function(err, msg) {
+          console.log(`${req.query.jukebox} - ${now} - 365 error ${err}`);
+        });
+      }
+    });
     dbclient.lindex("playlist_"+req.query.jukebox, 0, function(err, msg) {
       if (err) {
         res.send(`#STOP:${err}`);
@@ -176,9 +204,9 @@ app.post("/playlist/delete", function(req, res) {
 // user order a song
 // curl -v --data "jukebox=test&user=developer&token=testtoken&song=1" http://localbox/playlist
 app.post("/playlist", function(req, res) {
-  if (req.body && req.body.jukebox && req.body.user && req.body.token && req.body.song) {
+  if (req.body && req.body.jukebox && req.body.user && req.body.song) {
     dbclient.get('session_token_'+req.body.user, function(err, msg) {
-      if (req.body.token===msg || req.body.token==='testtoken') { // TODO: remove the testtoken
+      if (msg) {
         dbclient.rpush("playlist_"+req.body.jukebox, req.body.song, function(err, msg) {
           if (err) {
             res.send({"title":"ERROR", "msg":`点歌失败:${err}`});
@@ -187,7 +215,7 @@ app.post("/playlist", function(req, res) {
           }
         }); 
       } else {
-        res.send({"title":"ERROR", "msg":`unauthorized user`});
+        res.send({"title":"错误", "msg":`超时，请重新从微信发起操作`});
       }
     });
   } else {
@@ -196,7 +224,7 @@ app.post("/playlist", function(req, res) {
 });
 
 app.get('/', function (req, res) {
-  res.render('wechat_home');
+  res.sendFile('/index.html');
 });
 
 app.get('/wechat', function (req, res) {
@@ -209,6 +237,18 @@ app.use('/wechat', wechat(config.wechat, wechat.text(function (message, req, res
   var user = message.FromUserName;
   var token = 'testtoken';
   var jb = 'test';
+  var d = new Date();
+  var now = d.getTime();
+  // set session token for the user auth from wechat
+  dbclient.set('session_token_'+user, now, function(err, msg) {
+    if (!err) {
+      dbclient.expire('session_token_'+user, 60, function(err, msg) {
+        if (!err) {
+          console.log(`set user token ${user} ${now}`);
+        }
+      });
+    }
+  });
   if (msg==='help' || msg==='?') {
     res.reply(utils.get_help());
   } else if (msg.match(/^jb\s+\w+/)) {

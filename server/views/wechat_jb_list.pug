@@ -1,5 +1,26 @@
 extends wechat_base.pug
-
+block script
+  script.
+    $(document).ready(function(){
+      $("a.weui-cell").each(function() {
+        var image = $(this).find("img").first();
+        var item = $(this).find("div.weui-cell__bd > p").first();
+        var jukebox = item.text();
+        $.get("/jb?jukebox="+jukebox, function(data, status) {
+          if (data) {
+            if (data.error) {
+              console.log(`${jukebox} heartbeat error ${data.error}`);
+            } else if (data.heartbeat) {
+              var d = new Date();
+              var now = d.getTime();
+              var uptime = (now - data.heartbeat)/60000;
+              console.log(`${jukebox} heartbeat ${uptime} mins`);
+              image.attr('src', '/images/on.png');
+            }
+          }
+        });
+      });
+    });
 block title
   title #{title}
 
@@ -8,6 +29,8 @@ block body
   .weui-cells
     each item, index in items
       a.weui-cell.weui-cell_access(href='/musiclist?key='+index+'&token='+token+'&user='+user)
+        .weui-cell__hd
+          img(src="/images/off.png" alt="" style="width:20px;margin-right:5px;display:block")
         .weui-cell__bd
           p #{index}
         .weui-cell__ft #{item}

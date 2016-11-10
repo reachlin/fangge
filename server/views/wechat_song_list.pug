@@ -13,11 +13,10 @@ block script
         });
     };
 block title
-  title #{title}
+  title [#{jukebox}]#{title}
 
 block body
   .weui-cells__title
-    div 点唱机 #{jukebox} 的 #{title}
     a(href='/playlist?jukebox='+jukebox) 正在播放
   .weui-cells
     each item, index in items
