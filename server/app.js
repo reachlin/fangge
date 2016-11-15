@@ -97,8 +97,16 @@ app.get("/musiclist", function(req, res) {
         res.render('wechat_msg', {"title":"ERROR", "msg":`${err}`});
       } else {
         if (msg) {
-            var songs = msg["music"].split('\n');
-            res.render('wechat_song_list', {"title":"歌单", "items": songs, "jukebox": req.query.key, "token": req.query.token, "user": req.query.user});
+            dbclient.get("heartbeat_"+req.query.key, function(err2, msg2) {
+              var uptime = 0;
+              var d = new Date();
+              var now = d.getTime();
+              if (msg2) {
+                uptime = Math.round((now - msg2)/1000/60/60);
+              }
+              var songs = msg["music"].split('\n');
+              res.render('wechat_song_list', {"title":"歌单", "items": songs, "jukebox": req.query.key, "token": req.query.token, "user": req.query.user, "uptime": uptime});
+            });
         } else {
             res.render('wechat_msg', {"title":"错误", "msg":"无此点唱机"});
         }

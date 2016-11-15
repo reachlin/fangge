@@ -17,7 +17,8 @@ block title
 
 block body
   .weui-cells__title
-    a(href='/playlist?jukebox='+jukebox) 正在播放
+    div 运行 #{uptime} 小时
+      a(href='/playlist?jukebox='+jukebox style='float:right;') 正在播放
   .weui-cells
     each item, index in items
       a.weui-cell.weui-cell_access(href='javascript:playSong('+(index+1)+')')
