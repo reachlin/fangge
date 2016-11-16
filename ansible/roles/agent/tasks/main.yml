@@ -1,7 +1,13 @@
-- name: update repositories cache and install vlc
+- name: update repo
+  apt:
+    update_cache: yes
+    cache_valid_time: 36000
+- name: install vlc
   apt:
     name: vlc
-    update_cache: yes
+- name: install usbmount
+  apt:
+    name: usbmount
 - name: copy alsa usb sound driver conf
   copy: src=files/alsa_usb.conf dest=/usr/share/alsa/alsa.conf.d/
 - name: copy agent
@@ -9,7 +15,7 @@
 - name: enable agent on boot clean
   replace: dest=/etc/rc.local regexp='^runuser.*' 
 - name: enable agent on boot
-  replace: dest=/etc/rc.local regexp='^exit 0' replace='runuser -l pi -c \'fangge-agent.py --url "{{ AGENT_URL }}" --id {{ AGENT_ID }} --token {{ AGENT_TOKEN }} --path {{ MUSIC_FOLDER }} --info "{{ AGENT_INFO }}"\'\nexit 0' backup=yes
+  replace: dest=/etc/rc.local regexp='^exit 0' replace='runuser -l pi -c \'fangge-agent.py --usb --url "{{ AGENT_URL }}" --id {{ AGENT_ID }} --token {{ AGENT_TOKEN }} --path {{ MUSIC_FOLDER }} --info "{{ AGENT_INFO }}"\'\nexit 0' backup=yes
 - name: mkdir music data
   file: path={{ MUSIC_FOLDER }} state=directory mode="u+rw,g+rwx,o+rwx"
   become: no

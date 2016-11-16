@@ -12,12 +12,11 @@ import urllib2
 import re
 import argparse
 from os import listdir
-from os.path import isfile, join
+from os.path import isdir, isfile, join
 
 
 
 JB_ID = "test"
-PATH = "Music"
 DELAY = 70
 DELAY_SHORT = 7
 URL_PREFIX = "http://www.bookxclub.com/";
@@ -27,6 +26,17 @@ TOKEN = "testtoken"
 
 def init():
     print "init..."
+
+def check_usb():
+    folders = ['/media/usb0', '/media/usb1', '/media/usb2', '/media/usb3',
+        '/media/usb4', '/media/usb5', '/media/usb6', '/media/usb7']
+    for folder in folders:
+        if isdir(folder):
+            files = listdir(folder)
+            if files and len(files)>0:
+                return folder
+    return None
+
 
 def play_song(song):
     uname = subprocess.check_output(['uname', '-a'])
@@ -46,9 +56,9 @@ def get_jb_info():
         ip = args.info
     return ip
 
-def register_music():
+def register_music(music_folder):
     global song_list
-    song_list = sorted([f for f in listdir(PATH) if isfile(join(PATH, f))])
+    song_list = sorted([f for f in listdir(music_folder) if isfile(join(music_folder, f))])
     onlyfiles = ["%d %s" % (i+1, f) for i, f in enumerate(song_list)]
     print("%s" % onlyfiles)
     url = URL_PREFIX + 'musiclist'
@@ -64,7 +74,7 @@ def register_music():
     rtn = response.read()
     print("register %s" % rtn)
 
-def job():
+def job(music_folder):
     print("%s play music..." % time.strftime("%Y/%m/%d-%H:%M:%S"))
 
     song = urllib2.urlopen(URL_PREFIX+'playlist/current?jukebox='+JB_ID).read()
@@ -79,7 +89,7 @@ def job():
                 p = re.compile(r'^\d+')
                 if p.match(song):
                     song_name = song_list[int(song)-1]
-                song_name = PATH+"/"+song_name
+                song_name = music_folder+"/"+song_name
                 rtn = play_song(song_name)
                 print ("song play returned: %s" % rtn)
             except:
@@ -110,20 +120,25 @@ parser.add_argument('--path', dest='path', default='Music',
 parser.add_argument('--url', dest='url', default='http://www.bookxclub.com/', help='server url')
 parser.add_argument('--info', dest='info', default="", help='server url')
 parser.add_argument('--token', dest='token', required='true', help='token to connect to the server')
+parser.add_argument('--usb', dest='usb', default=False, action='store_true')
 
 args = parser.parse_args()
 JB_ID = args.id
-PATH = args.path
 URL_PREFIX = args.url
 TOKEN=args.token
-print "ID: %s, Music folder: %s" % (JB_ID, PATH)
+current_path = args.path
+print "ID: %s, Music folder: %s" % (JB_ID, current_path)
 
 time.sleep(DELAY_SHORT)    # without this rc.local will fail!
 init()
-register_music()
+register_music(current_path)
 while True:
     try:
-        job()
+        job(current_path)
+        if args.usb:
+            current_path = check_usb()
+            if current_path:
+                register_music(current_path)
     except KeyboardInterrupt:
         print("Bye!")
         import sys;sys.exit(0)
