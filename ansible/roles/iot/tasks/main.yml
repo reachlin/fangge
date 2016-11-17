@@ -1,0 +1,7 @@
+- name: install iot package from the internet.
+  apt:
+    deb: https://github.com/ibm-messaging/iot-raspberrypi/releases/download/1.0.2.1/iot_1.0-2_armhf.deb
+- name: configure iot
+  template: src=device.cfg.j2 dest=/etc/iotsample-raspberrypi/device.cfg
+- name: restart iot
+  service: name=iot state=restarted
