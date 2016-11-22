@@ -18,7 +18,7 @@ block title
 block body
   .weui-cells__title
     div 运行 #{uptime} 小时
-      a.weui-loadmore.weui-loadmore_line weui-loadmore_dot(href='/playlist?jukebox='+jukebox style='float:right;')
+      a(href='/playlist?jukebox='+jukebox style='float:right;')
         i.weui-loading
         | 正在播放列表
   .weui-cells

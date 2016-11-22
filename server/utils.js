@@ -16,6 +16,12 @@ module.exports = {
 
         return text;
   },
+  get_hash: function(text) {
+    var str = `${text}ACEGREWREXafrewCDD123754Mh`;
+    var result = str.split('').reduce((prevHash, currVal) => ((prevHash << 5) - prevHash) + currVal.charCodeAt(0), 0);
+    result = `${result}`
+    return result;
+  },
   check_hash: function(text, hash) {
     var str = `${text}ACEGREWREXafrewCDD123754Mh`;
     var result = str.split('').reduce((prevHash, currVal) => ((prevHash << 5) - prevHash) + currVal.charCodeAt(0), 0);

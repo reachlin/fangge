@@ -28,6 +28,14 @@ dbclient.on('connect', function() {
   console.log('redis connected');
 });
 
+app.get("/token", function(req, res) {
+  if (req.query && req.query.name && req.query.secret && req.query.secret==='lincai081077') {
+    res.send(utils.get_hash(req.query.name));
+  } else {
+    res.send('I am watching you...');
+  }
+});
+
 // the agent register itself after boot
 app.post("/musiclist", function(req, res) {
   if (req.body && req.body.jukebox && req.body.token) {
