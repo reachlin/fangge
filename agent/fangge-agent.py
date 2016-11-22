@@ -92,8 +92,8 @@ def job(music_folder):
                 song_name = music_folder+"/"+song_name
                 rtn = play_song(song_name)
                 print ("song play returned: %s" % rtn)
-            except:
-                print("play error: %s" % song)
+            except Exception as e:
+                print("play error: %s %s" % (song, e))
             # delete song from the server whatever
             values = {
                 'jukebox': JB_ID,
@@ -136,8 +136,9 @@ while True:
     try:
         job(current_path)
         if args.usb:
-            current_path = check_usb()
-            if current_path:
+            usb_path = check_usb()
+            if usb_path:
+                current_path = usb_path
                 register_music(current_path)
     except KeyboardInterrupt:
         print("Bye!")

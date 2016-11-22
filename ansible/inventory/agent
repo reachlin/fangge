@@ -1,2 +1,3 @@
 [agent]
-raspberrypi ansible_user="pi" ansible_become="true"
+yellow ansible_user="pi" ansible_become="true"
+red ansible_user="pi" ansible_become="true"

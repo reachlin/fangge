@@ -79,3 +79,40 @@ mpc ls|mpc add
 mpc play
 mpc current
 ```
+
+## 11/17/2016
+* [How to Register Devices in IBM Watson IoT Platform](https://developer.ibm.com/recipes/tutorials/how-to-register-devices-in-ibm-iot-foundation/)
+* [Connect a Raspberry Pi to IBM Watson IoT Platform](https://developer.ibm.com/recipes/tutorials/raspberry-pi-4/)
+
+## 11/22/2016
+```
+pi@raspberrypi:~ $ amixer sget 'PCM'
+Simple mixer control 'PCM',0
+  Capabilities: pvolume pswitch pswitch-joined
+  Playback channels: Front Left - Front Right
+  Limits: Playback 0 - 37
+  Mono:
+  Front Left: Playback 17 [46%] [-20.00dB] [on]
+  Front Right: Playback 17 [46%] [-20.00dB] [on]
+pi@raspberrypi:~ $ amixer sset 'PCM' 80%
+Simple mixer control 'PCM',0
+  Capabilities: pvolume pswitch pswitch-joined
+  Playback channels: Front Left - Front Right
+  Limits: Playback 0 - 37
+  Mono:
+  Front Left: Playback 30 [81%] [-7.00dB] [on]
+  Front Right: Playback 30 [81%] [-7.00dB] [on]
+pi@raspberrypi:~ $ amixer sget 'PCM'
+Simple mixer control 'PCM',0
+  Capabilities: pvolume pswitch pswitch-joined
+  Playback channels: Front Left - Front Right
+  Limits: Playback 0 - 37
+  Mono:
+  Front Left: Playback 30 [81%] [-7.00dB] [on]
+  Front Right: Playback 30 [81%] [-7.00dB] [on]
+pi@raspberrypi:~ $ 
+```
+
+```
+ansible-playbook -i inventory/agent -l red --extra-vars "AGENT_ID=redbox AGENT_TOKEN=-4499186814 AGENT_INFO=raspberrypi" agent.yml
+```
