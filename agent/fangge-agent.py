@@ -15,7 +15,6 @@ from os import listdir
 from os.path import isdir, isfile, join
 
 
-
 JB_ID = "test"
 DELAY = 70
 DELAY_SHORT = 7
@@ -36,6 +35,21 @@ def check_usb():
             if files and len(files)>0:
                 return folder
     return None
+
+def fix_wifi():
+    print "...fixing wifi..."
+    try:
+        folders = ['/media/usb0', '/media/usb1', '/media/usb2', '/media/usb3',
+            '/media/usb4', '/media/usb5', '/media/usb6', '/media/usb7']
+        for folder in folders:
+            wifi_conf = folder+'/wifi.conf'
+            if isfile(wifi_conf):
+                subprocess.call("sudo cat %s > /etc/wpa_supplicant/wpa_supplicant.conf" % wifi_conf, shell=True)
+                subprocess.call("sudo ifdown wlan0", shell=True)
+                subprocess.call("sudo ifup wlan0", shell=True)
+    except Exception as e:
+        print e
+
 
 
 def play_song(song):
@@ -105,10 +119,8 @@ def job(music_folder):
             song_deleted = response.read()
             if song != song_deleted:
                 print("...inconsistent songs: %s - %s" % (song, song_deleted))
-            time.sleep(DELAY_SHORT)
     else:
         print("no song received.")
-        time.sleep(DELAY)
 
 
 # main
@@ -130,16 +142,23 @@ current_path = args.path
 print "ID: %s, Music folder: %s" % (JB_ID, current_path)
 
 time.sleep(DELAY_SHORT)    # without this rc.local will fail!
-init()
-register_music(current_path)
+
+try:
+    init()
+    register_music(current_path)
+except:
+    fix_wifi()
 while True:
     try:
+        time.sleep(DELAY_SHORT)
         job(current_path)
         if args.usb:
             usb_path = check_usb()
             if usb_path:
                 current_path = usb_path
                 register_music(current_path)
+    except IOError:
+        fix_wifi()
     except KeyboardInterrupt:
         print("Bye!")
         import sys;sys.exit(0)

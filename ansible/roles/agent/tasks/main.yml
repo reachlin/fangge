@@ -1,3 +1,5 @@
+- name: wifi file permission
+  file: path=/etc/wpa_supplicant/wpa_supplicant.conf mode="g+w,o+w"
 - name: update repo
   apt:
     update_cache: yes
