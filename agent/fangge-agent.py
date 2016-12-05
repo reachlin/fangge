@@ -105,21 +105,23 @@ def job(music_folder):
                 if p.match(song):
                     song_name = song_list[int(song)-1]
                 song_name = music_folder+"/"+song_name
+
+                # delete song from the server whatever
+                values = {
+                    'jukebox': JB_ID,
+                    'token': TOKEN
+                }
+                data = urllib.urlencode(values)
+                req = urllib2.Request(URL_PREFIX+"playlist/delete", data)
+                response = urllib2.urlopen(req)
+                song_deleted = response.read()
+                if song != song_deleted:
+                    print("...inconsistent songs: %s - %s" % (song, song_deleted))
+
                 rtn = play_song(song_name)
                 print ("song play returned: %s" % rtn)
             except Exception as e:
                 print("play error: %s %s" % (song, e))
-            # delete song from the server whatever
-            values = {
-                'jukebox': JB_ID,
-                'token': TOKEN
-            }
-            data = urllib.urlencode(values)
-            req = urllib2.Request(URL_PREFIX+"playlist/delete", data)
-            response = urllib2.urlopen(req)
-            song_deleted = response.read()
-            if song != song_deleted:
-                print("...inconsistent songs: %s - %s" % (song, song_deleted))
     else:
         song_name = random.choice(song_list)
         print("no song received, play a random song %s" % song_name)
