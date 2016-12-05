@@ -3,6 +3,7 @@
 # add the next line to /etc/rc.local
 # cd /home/pi/;./fangge-agent.py
 
+import random
 import logging
 import traceback
 import time
@@ -120,7 +121,11 @@ def job(music_folder):
             if song != song_deleted:
                 print("...inconsistent songs: %s - %s" % (song, song_deleted))
     else:
-        print("no song received.")
+        song_name = random.choice(song_list)
+        print("no song received, play a random song %s" % song_name)
+        rtn = play_song(music_folder+"/"+song_name)
+        print ("song play returned: %s" % rtn)
+
 
 
 # main
