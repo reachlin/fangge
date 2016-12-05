@@ -277,38 +277,28 @@ app.use('/wechat', wechat(config.wechat, wechat.text(function (message, req, res
         res.reply(`${jb}: 连接成功`);
       }
     });
-  } else if (msg.match(/^list\s+\w+/)) {
-    jb = msg.replace('list', '');
-    jb = jb.replace(/\s/g, '');
-    res.reply([
-      {
-        title: '查看可选歌曲',
-        description: '请从列表中选择播放歌曲',
-        url: `http://www.bookxclub.com/musiclist?key=${jb}&token=${token}&user=${user}`
-      }
-    ]);
   } else if (msg.match(/^stop\s+\w+/)) {
     jb = msg.replace('stop', '');
     jb = jb.replace(/\s/g, '');
-    dbclient.hset(jb, "play", "#STOP", function(err, msg) {
+    dbclient.lpush("playlist_"+jb, "#STOP", function(err, msg) {
       if (err) {
         res.reply(`${jb}: Cant stop the music.`);
       } else {
         res.reply(`${jb}: Music stopped.`);
       }
     });
-  } else if (msg.match(/^current\s+\w+/)) {
-    jb = msg.replace('current', '');
+  } else if (msg.match(/^play\s+\w+/)) {
+    jb = msg.replace('play', '');
     jb = jb.replace(/\s/g, '');
-    dbclient.hget(jb, "play", function(err, msg) {
+    dbclient.lpop("playlist_"+jb, function(err, msg) {
       if (err) {
         res.reply(`${jb}: Error!`);
       } else {
         if (msg) {
           if (msg==='#STOP') {
-            res.reply(`${jb}: Stopped.`);
+            res.reply(`${jb}: resumed.`);
           } else {
-            res.reply(`${jb}: ${msg}`);
+            res.reply(`${jb}: skipped ${msg}`);
           }
         } else {
           res.reply(`${jb}: Idle...`);
