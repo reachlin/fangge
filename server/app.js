@@ -165,6 +165,24 @@ app.get("/playlist", function(req, res) {
 // curl -V http://localbox/jbstatus?jukebox=test
 app.get("/jbstatus", function(req, res) {
   if (req.query && req.query.jukebox) {
+    var dt = new Date();
+    var now = dt.getTime();
+    dbclient.get("heartbeat_"+req.query.jukebox, function(err, msg) {
+      if (err || !msg) {
+        dbclient.set("heartbeat_"+req.query.jukebox, now, function(err, msg) {
+          if (!err) {
+            dbclient.expire("heartbeat_"+req.query.jukebox, 365, function(err, msg) {
+              console.log(`${req.query.jukebox} - ${now} - 365 error ${err}`);
+            });
+          }
+        });
+      } else {
+        dbclient.expire("heartbeat_"+req.query.jukebox, 365, function(err, msg) {
+          console.log(`${req.query.jukebox} - ${now} - 365 error ${err}`);
+        });
+      }
+    });
+
     dbclient.get(req.query.jukebox+"_status", function(err, msg) {
       if (err) {
         res.send(`#STOP:${err}`);
@@ -185,23 +203,6 @@ app.get("/jbstatus", function(req, res) {
 // curl -V http://localbox/playlist/current?jukebox=test
 app.get("/playlist/current", function(req, res) {
   if (req.query && req.query.jukebox) {
-    var dt = new Date();
-    var now = dt.getTime();
-    dbclient.get("heartbeat_"+req.query.jukebox, function(err, msg) {
-      if (err || !msg) {
-        dbclient.set("heartbeat_"+req.query.jukebox, now, function(err, msg) {
-          if (!err) {
-            dbclient.expire("heartbeat_"+req.query.jukebox, 365, function(err, msg) {
-              console.log(`${req.query.jukebox} - ${now} - 365 error ${err}`);
-            });
-          }
-        });
-      } else {
-        dbclient.expire("heartbeat_"+req.query.jukebox, 365, function(err, msg) {
-          console.log(`${req.query.jukebox} - ${now} - 365 error ${err}`);
-        });
-      }
-    });
     dbclient.lindex("playlist_"+req.query.jukebox, 0, function(err, msg) {
       if (err) {
         res.send(`#STOP:${err}`);
