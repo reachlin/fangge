@@ -1,4 +1,4 @@
 ---
-- hosts: agent
+- hosts: raspberrypi
   roles:
   - agent

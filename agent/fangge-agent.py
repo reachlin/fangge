@@ -57,7 +57,7 @@ def play_song(song):
     uname = subprocess.check_output(['uname', '-a'])
     if re.search("Darwin", uname):
         return subprocess.call("/Applications/VLC.app/Contents/MacOS/VLC --play-and-exit -I dummy \"%s\"" % song, shell=True)
-    elif re.search("raspberrypi", uname):
+    elif re.search("Linux", uname):
         return subprocess.call(["cvlc", "--play-and-exit", "-I", "dummy", song])
     else:
         print "unknow system, don't know how to play"
@@ -92,42 +92,52 @@ def register_music(music_folder):
 def job(music_folder):
     print("%s play music..." % time.strftime("%Y/%m/%d-%H:%M:%S"))
 
-    song = urllib2.urlopen(URL_PREFIX+'playlist/current?jukebox='+JB_ID).read()
-    if song:
-        print("...play song: "+song)
-        p = re.compile(r'^#STOP')
-        if p.match(song):
-            print("...received: %s" % song)
-            time.sleep(DELAY)
-        else:
-            try:
-                p = re.compile(r'^\d+')
-                if p.match(song):
-                    song_name = song_list[int(song)-1]
-                song_name = music_folder+"/"+song_name
+    status = urllib2.urlopen(URL_PREFIX+'jbstatus?jukebox='+JB_ID).read()
+    if status:
+        p_play = re.compile(r'^#PLAY')
+        p_shuffle = re.compile(r'^#SHUFFLE')
+        if p_shuffle.match(status):
+            song_name = random.choice(song_list)
+            print("shuffling songs %s" % song_name)
+            rtn = play_song(music_folder+"/"+song_name)
+            print ("song play returned: %s" % rtn)
+        elif p_play.match(status):
+            song = urllib2.urlopen(URL_PREFIX+'playlist/current?jukebox='+JB_ID).read()
+            if song:
+                print("...play song: "+song)
+                try:
+                    p = re.compile(r'^\d+')
+                    if p.match(song):
+                        song_name = song_list[int(song)-1]
+                    else:
+                        song_name = song
+                    song_name = music_folder+"/"+song_name
 
-                # delete song from the server whatever
-                values = {
-                    'jukebox': JB_ID,
-                    'token': TOKEN
-                }
-                data = urllib.urlencode(values)
-                req = urllib2.Request(URL_PREFIX+"playlist/delete", data)
-                response = urllib2.urlopen(req)
-                song_deleted = response.read()
-                if song != song_deleted:
-                    print("...inconsistent songs: %s - %s" % (song, song_deleted))
+                    # delete song from the server whatever
+                    values = {
+                        'jukebox': JB_ID,
+                        'token': TOKEN
+                    }
+                    data = urllib.urlencode(values)
+                    req = urllib2.Request(URL_PREFIX+"playlist/delete", data)
+                    response = urllib2.urlopen(req)
+                    song_deleted = response.read()
+                    if song != song_deleted:
+                        print("...inconsistent songs: %s - %s" % (song, song_deleted))
 
-                rtn = play_song(song_name)
+                    rtn = play_song(song_name)
+                    print ("song play returned: %s" % rtn)
+                except Exception as e:
+                    print("play error: %s %s" % (song, e))
+            else:
+                song_name = random.choice(song_list)
+                print("no song received, play a random song %s" % song_name)
+                rtn = play_song(music_folder+"/"+song_name)
                 print ("song play returned: %s" % rtn)
-            except Exception as e:
-                print("play error: %s %s" % (song, e))
+        else:
+            print("unknown status: %s" % status)
     else:
-        song_name = random.choice(song_list)
-        print("no song received, play a random song %s" % song_name)
-        rtn = play_song(music_folder+"/"+song_name)
-        print ("song play returned: %s" % rtn)
-
+        print("no status received")
 
 
 # main

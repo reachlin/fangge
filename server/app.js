@@ -97,6 +97,7 @@ app.get("/jblist", function(req, res) {
   }
 });
 
+// get song list of a jukebox
 app.get("/musiclist", function(req, res) {
   if (req.query && req.query.key && req.query.user && req.query.token) {
     console.log(`---get music for ${req.query.key}`);
@@ -157,6 +158,26 @@ app.get("/playlist", function(req, res) {
     });
   } else {
     res.render('wechat_msg', {"title":"ERROR", "msg":"missing query parameter"});
+  }
+});
+
+// agent get status of a jukebox
+// curl -V http://localbox/jbstatus?jukebox=test
+app.get("/jbstatus", function(req, res) {
+  if (req.query && req.query.jukebox) {
+    dbclient.get(req.query.jukebox+"_status", function(err, msg) {
+      if (err) {
+        res.send(`#STOP:${err}`);
+      } else {
+        if (msg) {
+          res.send(msg);
+        } else {
+          res.send("#STOP");
+        }
+      }
+    });
+  } else {
+    res.send('#STOP');
   }
 });
 
@@ -258,7 +279,7 @@ app.use('/wechat', wechat(config.wechat, wechat.text(function (message, req, res
   // set session token for the user auth from wechat
   dbclient.set('session_token_'+user, now, function(err, msg) {
     if (!err) {
-      dbclient.expire('session_token_'+user, 60, function(err, msg) {
+      dbclient.expire('session_token_'+user, 180, function(err, msg) {
         if (!err) {
           console.log(`set user token ${user} ${now}`);
         }
@@ -277,42 +298,77 @@ app.use('/wechat', wechat(config.wechat, wechat.text(function (message, req, res
         res.reply(`${jb}: 连接成功`);
       }
     });
-  } else if (msg.match(/^stop\s+\w+/)) {
+  } else if (msg.match(/^stop\s+\w+/i)) {
     jb = msg.replace('stop', '');
     jb = jb.replace(/\s/g, '');
-    dbclient.lpush("playlist_"+jb, "#STOP", function(err, msg) {
+    dbclient.set(jb+"_status", "#STOP", function(err, msg) {
       if (err) {
         res.reply(`${jb}: Cant stop the music.`);
       } else {
         res.reply(`${jb}: Music stopped.`);
       }
     });
-  } else if (msg.match(/^play\s+\w+/)) {
+  } else if (msg.match(/^play\s+\w+/i)) {
     jb = msg.replace('play', '');
     jb = jb.replace(/\s/g, '');
-    dbclient.lpop("playlist_"+jb, function(err, msg) {
+    dbclient.set(jb+"_status", "#PLAY", function(err, msg) {
+      if (err) {
+        res.reply(`${jb}: Error!`);
+      } else {
+        res.reply(`${jb}: Playing...`);
+      }
+    });
+  } else if (msg.match(/^shuffle\s+\w+/i)) {
+    jb = msg.replace('shuffle', '');
+    jb = jb.replace(/\s/g, '');
+    dbclient.set(jb+"_status", "#SHUFFLE", function(err, msg) {
+      if (err) {
+        res.reply(`${jb}: Error!`);
+      } else {
+        res.reply(`${jb}: Shuffling...`);
+      }
+    });
+  } else if (msg.match(/^status\s+\w+/i)) {
+    jb = msg.replace('status', '');
+    jb = jb.replace(/\s/g, '');
+    dbclient.get(jb+"_status", function(err, msg) {
       if (err) {
         res.reply(`${jb}: Error!`);
       } else {
         if (msg) {
-          if (msg==='#STOP') {
-            res.reply(`${jb}: resumed.`);
-          } else {
-            res.reply(`${jb}: skipped ${msg}`);
-          }
+          res.reply(`${jb}: ${msg}`);
         } else {
-          res.reply(`${jb}: Idle...`);
+          // no status, set to stop
+          dbclient.set(jb+"_status", "#STOP", function(err, msg) {
+            if (err) {
+              res.reply(`${jb}: Error`);
+            } else {
+              res.reply(`${jb}: STOP`);
+            }
+          });
         }
       }
     });
   } else {
-    res.reply([
-      {
-        title: '附近的点唱机',
-        description: '请从列表中选择播放歌曲的点唱机',
-        url: `http://www.bookxclub.com/jblist?user=${user}&token=${token}`
+    dbclient.hget("jukebox", msg, function(err, message) {
+      if (message) {
+        res.reply([
+          {
+            title: `${msg} 歌曲列表`,
+            description: '请从列表中选择播放的歌曲',
+            url: `http://www.bookxclub.com/musiclist?user=${user}&token=${token}&key=${msg}`
+          }
+        ]);
+      } else {
+        res.reply([
+          {
+            title: '附近的点唱机',
+            description: '请从列表中选择播放歌曲的点唱机',
+            url: `http://www.bookxclub.com/jblist?user=${user}&token=${token}`
+          }
+        ]);
       }
-    ]);
+    });
   }
 })));
 

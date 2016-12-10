@@ -14,7 +14,7 @@ start working on agent
 ## 10/24/2016
 ```
 diskutil list
-sudo diskutil unmountDisk /dev/disk2
+sudo diskutil unmountDisk /dev/disk1
 sudo dd bs=1m if=RuneAudio_rpi2_rp3_0.4-beta_20160321_2GB.img of=/dev/disk2
 ```
 
@@ -116,3 +116,7 @@ pi@raspberrypi:~ $
 ```
 ansible-playbook -i inventory/agent -l red --extra-vars "AGENT_ID=redbox AGENT_TOKEN=-4499186814 AGENT_INFO=raspberrypi" agent.yml
 ```
+
+sudo apt-get install pulseaudio pulseaudio-module-bluetooth
+bluetoohctl power on, agent on, scan on, connect, trust
+

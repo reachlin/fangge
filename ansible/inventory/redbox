@@ -1,0 +1,2 @@
+[raspberrypi]
+redbox ansible_user="pi" ansible_become="true"

@@ -1,0 +1,2 @@
+[raspberrypi]
+yellowbox ansible_host="192.168.3.9" ansible_user="pi" ansible_become="true"
