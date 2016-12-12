@@ -1,5 +1,6 @@
 AGENT_ID: test
 AGENT_TOKEN: testtoken
 MUSIC_FOLDER: /home/pi/music/
+MUSIC_LIB: ~/Desktop/Music/
 AGENT_INFO: test agent
 AGENT_URL: http://www.bookxclub.com/

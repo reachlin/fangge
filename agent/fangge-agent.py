@@ -97,6 +97,8 @@ def job(music_folder):
         p_play = re.compile(r'^#PLAY')
         p_shuffle = re.compile(r'^#SHUFFLE')
         if p_shuffle.match(status):
+            play_song(music_folder+'/shuffle.wma')
+            time.sleep(DELAY_SHORT)
             song_name = random.choice(song_list)
             print("shuffling songs %s" % song_name)
             rtn = play_song(music_folder+"/"+song_name)
@@ -106,13 +108,6 @@ def job(music_folder):
             if song:
                 print("...play song: "+song)
                 try:
-                    p = re.compile(r'^\d+')
-                    if p.match(song):
-                        song_name = song_list[int(song)-1]
-                    else:
-                        song_name = song
-                    song_name = music_folder+"/"+song_name
-
                     # delete song from the server whatever
                     values = {
                         'jukebox': JB_ID,
@@ -123,20 +118,38 @@ def job(music_folder):
                     response = urllib2.urlopen(req)
                     song_deleted = response.read()
                     if song != song_deleted:
+                        play_song(music_folder+'/lsxg.wma')
                         print("...inconsistent songs: %s - %s" % (song, song_deleted))
 
+                    p = re.compile(r'^\d+')
+                    p_cmd = re.compile(r'^#')
+                    if p.match(song):
+                        song_name = song_list[int(song)-1]
+                    elif p_cmd.match(song):
+                        song_name = 'dingdong.wma'
+                    else:
+                        song_name = song
+
+                    song_name = music_folder+"/"+song_name
                     rtn = play_song(song_name)
                     print ("song play returned: %s" % rtn)
                 except Exception as e:
+                    play_song(music_folder+'/error.wma')
                     print("play error: %s %s" % (song, e))
             else:
+                play_song(music_folder+'/comeon.wma')
+                time.sleep(DELAY_SHORT)
+                play_song(music_folder+'/shuffle.wma')
+                time.sleep(DELAY_SHORT)
                 song_name = random.choice(song_list)
                 print("no song received, play a random song %s" % song_name)
                 rtn = play_song(music_folder+"/"+song_name)
                 print ("song play returned: %s" % rtn)
         else:
+            play_song(music_folder+'/lsxg.wma')
             print("unknown status: %s" % status)
     else:
+        play_song(music_folder+'/lsxg.wma')
         print("no status received")
 
 
@@ -156,6 +169,8 @@ JB_ID = args.id
 URL_PREFIX = args.url
 TOKEN=args.token
 current_path = args.path
+
+play_song(current_path+'/init.wma')
 print "ID: %s, Music folder: %s" % (JB_ID, current_path)
 
 time.sleep(DELAY_SHORT)    # without this rc.local will fail!
@@ -164,9 +179,12 @@ try:
     init()
     register_music(current_path)
 except:
+    play_song(music_folder+'/network.wma')
+    time.sleep(DELAY_SHORT)
     fix_wifi()
 while True:
     try:
+        play_song(current_path+'/ready.wma')
         time.sleep(DELAY_SHORT)
         job(current_path)
         if args.usb:
@@ -175,9 +193,13 @@ while True:
                 current_path = usb_path
                 register_music(current_path)
     except IOError:
+        play_song(current_path+'/network.wma')
+        time.sleep(DELAY_SHORT)
         fix_wifi()
     except KeyboardInterrupt:
+        play_song(current_path+'/lsxg.wma')
         print("Bye!")
         import sys;sys.exit(0)
     except Exception as e:
+        play_song(current_path+'/error.wma')
         logging.error(traceback.format_exc())

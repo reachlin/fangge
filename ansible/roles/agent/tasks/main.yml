@@ -4,6 +4,8 @@
   apt:
     update_cache: yes
     cache_valid_time: 36000
+  tags:
+    - repo
 - name: install vlc
   apt:
     name: vlc
@@ -29,6 +31,15 @@
 - name: mkdir music data
   file: path={{ MUSIC_FOLDER }} state=directory mode="u+rw,g+rwx,o+rwx"
   become: no
-- name: copy a sample mp3
-  copy: src=../agent/Music/aller.mp3 dest={{ MUSIC_FOLDER }}
+  tags:
+    - agent
+- name: copy sample media
+  copy: src=../agent/Music/ dest={{ MUSIC_FOLDER }}
   become: no
+  tags:
+    - agent
+- name: load music
+  copy: src={{ MUSIC_LIB }} dest={{ MUSIC_FOLDER }}
+  become: no
+  tags:
+    - music
