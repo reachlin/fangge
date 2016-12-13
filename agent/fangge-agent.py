@@ -23,6 +23,7 @@ URL_PREFIX = "http://www.bookxclub.com/";
 PLAYLIST = "test.m3u"
 song_list = []
 TOKEN = "testtoken"
+VOICE_FOLDER = "/home/pi/voices/"
 
 def init():
     print "init..."
@@ -52,6 +53,14 @@ def fix_wifi():
         print e
 
 
+def play_cmd(cmd):
+    print "...play command..."+cmd
+    cmd_path = args.voices+cmd
+    if isfile(cmd_path):
+        play_song(cmd_path)
+        time.sleep(DELAY_SHORT)
+    else:
+        print "...command not found"
 
 def play_song(song):
     uname = subprocess.check_output(['uname', '-a'])
@@ -96,9 +105,9 @@ def job(music_folder):
     if status:
         p_play = re.compile(r'^#PLAY')
         p_shuffle = re.compile(r'^#SHUFFLE')
+        p_stop = re.compile(r'^#STOP')
         if p_shuffle.match(status):
-            play_song(music_folder+'/shuffle.wma')
-            time.sleep(DELAY_SHORT)
+            play_cmd('shuffle.wma')
             song_name = random.choice(song_list)
             print("shuffling songs %s" % song_name)
             rtn = play_song(music_folder+"/"+song_name)
@@ -123,33 +132,33 @@ def job(music_folder):
 
                     p = re.compile(r'^\d+')
                     p_cmd = re.compile(r'^#')
-                    if p.match(song):
-                        song_name = song_list[int(song)-1]
-                    elif p_cmd.match(song):
-                        song_name = 'dingdong.wma'
+                    if p_cmd.match(song):
+                        play_cmd('dingdong.wma')
                     else:
-                        song_name = song
-
-                    song_name = music_folder+"/"+song_name
-                    rtn = play_song(song_name)
-                    print ("song play returned: %s" % rtn)
+                        if p.match(song):
+                            song_name = song_list[int(song)-1]
+                        else:
+                            song_name = song
+                        song_name = music_folder+"/"+song_name
+                        rtn = play_song(song_name)
+                        print ("song play returned: %s" % rtn)
                 except Exception as e:
-                    play_song(music_folder+'/error.wma')
+                    play_cmd('error.wma')
                     print("play error: %s %s" % (song, e))
             else:
-                play_song(music_folder+'/comeon.wma')
-                time.sleep(DELAY_SHORT)
-                play_song(music_folder+'/shuffle.wma')
-                time.sleep(DELAY_SHORT)
+                play_cmd('comeon.wma')
+                play_cmd('shuffle.wma')
                 song_name = random.choice(song_list)
                 print("no song received, play a random song %s" % song_name)
                 rtn = play_song(music_folder+"/"+song_name)
                 print ("song play returned: %s" % rtn)
+        elif p_stop.match(status):
+            print("...stopped...")
         else:
-            play_song(music_folder+'/lsxg.wma')
+            play_cmd('lsxg.wma')
             print("unknown status: %s" % status)
     else:
-        play_song(music_folder+'/lsxg.wma')
+        play_cmd('lsxg.wma')
         print("no status received")
 
 
@@ -162,7 +171,8 @@ parser.add_argument('--path', dest='path', default='Music',
 parser.add_argument('--url', dest='url', default='http://www.bookxclub.com/', help='server url')
 parser.add_argument('--info', dest='info', default="", help='server url')
 parser.add_argument('--token', dest='token', required='true', help='token to connect to the server')
-parser.add_argument('--usb', dest='usb', default=False, action='store_true')
+parser.add_argument('--usb', dest='usb', default=False, action='store_true', help='detect usb driver')
+parser.add_argument('--voice', dest='voices', default=VOICE_FOLDER, help='voice cmd folder')
 
 args = parser.parse_args()
 JB_ID = args.id
@@ -170,7 +180,7 @@ URL_PREFIX = args.url
 TOKEN=args.token
 current_path = args.path
 
-play_song(current_path+'/init.wma')
+play_cmd('init.wma')
 print "ID: %s, Music folder: %s" % (JB_ID, current_path)
 
 time.sleep(DELAY_SHORT)    # without this rc.local will fail!
@@ -178,28 +188,27 @@ time.sleep(DELAY_SHORT)    # without this rc.local will fail!
 try:
     init()
     register_music(current_path)
+    play_cmd('ready.wma')
 except:
-    play_song(music_folder+'/network.wma')
-    time.sleep(DELAY_SHORT)
+    play_cmd('network.wma')
     fix_wifi()
 while True:
     try:
-        play_song(current_path+'/ready.wma')
         time.sleep(DELAY_SHORT)
         job(current_path)
         if args.usb:
             usb_path = check_usb()
             if usb_path:
+                play_cmd('usb.wma')
                 current_path = usb_path
                 register_music(current_path)
     except IOError:
-        play_song(current_path+'/network.wma')
-        time.sleep(DELAY_SHORT)
+        play_cmd('network.wma')
         fix_wifi()
     except KeyboardInterrupt:
-        play_song(current_path+'/lsxg.wma')
+        play_cmd('valarmorghulis.wma')
         print("Bye!")
         import sys;sys.exit(0)
     except Exception as e:
-        play_song(current_path+'/error.wma')
+        play_cmd('error.wma')
         logging.error(traceback.format_exc())

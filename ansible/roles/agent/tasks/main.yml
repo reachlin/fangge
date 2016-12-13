@@ -34,7 +34,17 @@
   tags:
     - agent
 - name: copy sample media
-  copy: src=../agent/Music/ dest={{ MUSIC_FOLDER }}
+  copy: src=../agent/music/ dest={{ MUSIC_FOLDER }}
+  become: no
+  tags:
+    - agent
+- name: mkdir cmd voices folder
+  file: path={{ VOICE_FOLDER }} state=directory
+  become: no
+  tags:
+    - agent
+- name: copy voice cmd
+  copy: src=../agent/voices/ dest={{ VOICE_FOLDER }}
   become: no
   tags:
     - agent
